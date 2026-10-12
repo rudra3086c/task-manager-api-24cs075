@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
@@ -10,6 +11,11 @@ const taskRoutes = require("./routes/taskRoutes");
 
 // Parse JSON
 app.use(express.json());
+
+// Allow the local React development server to call the API.
+app.use(cors({
+    origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173"
+}));
 
 // Logging Middleware
 app.use(logger);
@@ -27,7 +33,7 @@ app.use((req, res) => {
 // Global Error Handler - LAST
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 async function startServer() {
     if (!process.env.MONGO_URI) {
