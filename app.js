@@ -1,4 +1,6 @@
 const express = require("express");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
 
@@ -25,8 +27,26 @@ app.use((req, res) => {
 // Global Error Handler - LAST
 app.use(errorHandler);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+async function startServer() {
+    if (!process.env.MONGO_URI) {
+        throw new Error("MONGO_URI is not configured. Add it to your .env file.");
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB connected");
+
+    app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+    });
+}
+
+if (require.main === module) {
+    startServer().catch((error) => {
+        console.error("Unable to start server:", error.message);
+        process.exit(1);
+    });
+}
+
+module.exports = app;
