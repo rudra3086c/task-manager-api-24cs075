@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createTask, deleteTask, getTasks, updateTask } from "./api";
+import { createTask, deleteTask, getCurrentUser, getTasks, login, register, updateTask } from "./api";
 
 const emptyForm = { title: "", description: "", priority: "medium" };
 
@@ -8,7 +8,61 @@ function Toast({ toast }) {
   return <div className={`toast ${toast.type}`}>{toast.message}</div>;
 }
 
+function AuthScreen({ onAuthenticated }) {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      const result = mode === "login"
+        ? await login({ email, password })
+        : await register({ email, password });
+      if (mode === "register") {
+        setMode("login");
+        setPassword("");
+        setError("Registration successful. You can now log in.");
+      } else {
+        localStorage.setItem("token", result.token);
+        onAuthenticated(result.user);
+      }
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="page auth-page">
+      <header>
+        <p className="eyebrow">FULL-STACK TASK MANAGER</p>
+        <h1>{mode === "login" ? "Welcome back." : "Create your account."}</h1>
+        <p className="subtitle">Sign in to manage your tasks securely.</p>
+      </header>
+      <section className="panel auth-panel">
+        <h2>{mode === "login" ? "Log in" : "Register"}</h2>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+          <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength="6" required /></label>
+          {error && <p className="error" role="alert">{error}</p>}
+          <button disabled={submitting}>{submitting ? "Please wait..." : mode === "login" ? "Log in" : "Register"}</button>
+        </form>
+        <button className="link-button auth-switch" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}>
+          {mode === "login" ? "Need an account? Register" : "Already have an account? Log in"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
 function App() {
+  const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -18,6 +72,19 @@ function App() {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    const handleExpired = () => {
+      setUser(null);
+      setTasks([]);
+      setError("Your session has expired. Please log in again.");
+    };
+    window.addEventListener("auth-expired", handleExpired);
+    if (localStorage.getItem("token")) {
+      getCurrentUser().then(setUser).catch(() => setUser(null));
+    }
+    return () => window.removeEventListener("auth-expired", handleExpired);
+  }, []);
 
   const notify = (message, type = "success") => {
     setToast({ message, type });
@@ -37,8 +104,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    if (user) loadTasks();
+  }, [loadTasks, user]);
+
+  if (!user) {
+    return <AuthScreen onAuthenticated={setUser} />;
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -152,6 +223,11 @@ function App() {
         <p className="eyebrow">FULL-STACK TASK MANAGER</p>
         <h1>Plan the work. Finish the work.</h1>
         <p className="subtitle">Tasks are persisted through your Express and MongoDB API.</p>
+        <button className="secondary" onClick={() => {
+          localStorage.removeItem("token");
+          setUser(null);
+          setTasks([]);
+        }}>Log out</button>
       </header>
 
       <section className="panel">

@@ -7,6 +7,8 @@ const app = express();
 
 const logger = require("./middleware/logger");
 const errorHandler = require("./middleware/errorHandler");
+const auth = require("./middleware/auth");
+const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 
 // Parse JSON
@@ -20,8 +22,11 @@ app.use(cors({
 // Logging Middleware
 app.use(logger);
 
-// Task Routes
-app.use("/tasks", taskRoutes);
+// Authentication routes
+app.use("/auth", authRoutes);
+
+// Task routes require a valid JWT.
+app.use("/tasks", auth, taskRoutes);
 
 // 404 Handler
 app.use((req, res) => {
@@ -38,6 +43,9 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
     if (!process.env.MONGO_URI) {
         throw new Error("MONGO_URI is not configured. Add it to your .env file.");
+    }
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not configured. Add it to your .env file.");
     }
 
     await mongoose.connect(process.env.MONGO_URI);

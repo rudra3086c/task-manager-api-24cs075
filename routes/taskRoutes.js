@@ -1,5 +1,6 @@
 const express = require("express");
 const Task = require("../models/Task");
+const validateTask = require("../middleware/validateTask");
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST
-router.post("/", async (req, res, next) => {
+router.post("/", validateTask, async (req, res, next) => {
     try {
         const task = await Task.create(req.body);
         res.status(201).json({
@@ -44,7 +45,7 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // PUT
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", validateTask, async (req, res, next) => {
     try {
         const task = await Task.findByIdAndUpdate(
             req.params.id,
