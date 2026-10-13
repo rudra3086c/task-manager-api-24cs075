@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { createTask, deleteTask, getCurrentUser, getTasks, login, register, updateTask } from "./api";
 
 const emptyForm = { title: "", description: "", priority: "medium" };
+
+function lazyWithMinimumDelay(importPage, delay = 300) {
+  return lazy(() => Promise.all([
+    importPage(),
+    new Promise((resolve) => window.setTimeout(resolve, delay))
+  ]).then(([module]) => module));
+}
+
+const Projects = lazyWithMinimumDelay(() => import("./pages/Projects"));
+const Contact = lazyWithMinimumDelay(() => import("./pages/Contact"));
 
 function Toast({ toast }) {
   if (!toast) return null;
@@ -63,6 +73,8 @@ function AuthScreen({ onAuthenticated }) {
 
 function App() {
   const [user, setUser] = useState(null);
+  const [route, setRoute] = useState(window.location.pathname);
+  const [routeLoading, setRouteLoading] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -85,6 +97,23 @@ function App() {
     }
     return () => window.removeEventListener("auth-expired", handleExpired);
   }, []);
+
+  useEffect(() => {
+    const handleNavigation = () => setRoute(window.location.pathname);
+    window.addEventListener("popstate", handleNavigation);
+    return () => window.removeEventListener("popstate", handleNavigation);
+  }, []);
+
+  const navigate = (path) => {
+    if (path === route) return;
+
+    window.history.pushState({}, "", path);
+    setRouteLoading(true);
+    window.setTimeout(() => {
+      setRoute(path);
+      setRouteLoading(false);
+    }, 600);
+  };
 
   const notify = (message, type = "success") => {
     setToast({ message, type });
@@ -110,6 +139,12 @@ function App() {
   if (!user) {
     return <AuthScreen onAuthenticated={setUser} />;
   }
+
+  const routeContent = route === "/projects"
+    ? <Projects />
+    : route === "/contact"
+      ? <Contact />
+      : null;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -223,14 +258,29 @@ function App() {
         <p className="eyebrow">FULL-STACK TASK MANAGER</p>
         <h1>Plan the work. Finish the work.</h1>
         <p className="subtitle">Tasks are persisted through your Express and MongoDB API.</p>
-        <button className="secondary" onClick={() => {
-          localStorage.removeItem("token");
-          setUser(null);
-          setTasks([]);
-        }}>Log out</button>
+        <nav className="main-nav" aria-label="Main navigation">
+          <button className={route === "/" ? "nav-active" : "link-button"} onClick={() => navigate("/")}>Tasks</button>
+          <button className={route === "/projects" ? "nav-active" : "link-button"} onClick={() => navigate("/projects")}>Projects</button>
+          <button className={route === "/contact" ? "nav-active" : "link-button"} onClick={() => navigate("/contact")}>Contact</button>
+          <button className="secondary" onClick={() => {
+            localStorage.removeItem("token");
+            setUser(null);
+            setTasks([]);
+          }}>Log out</button>
+        </nav>
       </header>
 
-      <section className="panel">
+      {routeLoading ? (
+        <div className="route-loading" role="status">
+          Loading page...
+        </div>
+      ) : (
+        <Suspense fallback={<div className="route-loading" role="status">Loading page...</div>}>
+          {routeContent}
+        </Suspense>
+      )}
+
+      {!routeContent && <section className="panel">
         <h2>{editingId ? "Edit task" : "Create a task"}</h2>
         <form onSubmit={handleSubmit}>
           <label>
@@ -272,9 +322,9 @@ function App() {
             )}
           </div>
         </form>
-      </section>
+      </section>}
 
-      <section className="tasks-section">
+      {!routeContent && <section className="tasks-section">
         <div className="section-heading">
           <h2>Your tasks</h2>
           <span>{tasks.filter((task) => !task.completed).length} open</span>
@@ -307,7 +357,7 @@ function App() {
             ))}
           </div>
         )}
-      </section>
+      </section>}
     </main>
   );
 }

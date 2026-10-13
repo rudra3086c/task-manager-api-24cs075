@@ -19,6 +19,12 @@ h2 { margin: 0; color: #172033; font-size: 1.25rem; }
 .auth-panel { margin-top: 24px; }
 .auth-form { display: grid; gap: 16px; margin-top: 20px; }
 .auth-switch { margin-top: 18px; }
+.main-nav { display: flex; align-items: center; gap: 16px; margin-top: 22px; }
+.main-nav .secondary { margin-left: auto; }
+.nav-active { padding: 0; color: #172033; background: transparent; font-size: .85rem; }
+.route-loading { margin-top: 24px; padding: 30px; border-radius: 12px; color: #667085; background: white; text-align: center; }
+.route-page { margin-top: 24px; }
+.route-highlight { display: grid; gap: 5px; margin-top: 24px; padding: 16px; border-radius: 10px; color: #475467; background: #f4f2ff; }
 form { display: grid; grid-template-columns: 1.3fr 1.6fr .8fr auto; gap: 16px; align-items: end; margin-top: 20px; }
 label { display: grid; gap: 7px; color: #475467; font-size: .83rem; font-weight: 700; }
 input, textarea, select { width: 100%; border: 1px solid #d0d5dd; border-radius: 9px; padding: 11px 12px; color: #1d2939; font: inherit; background: #fff; }
