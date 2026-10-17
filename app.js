@@ -1,3 +1,5 @@
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -10,6 +12,9 @@ const errorHandler = require("./middleware/errorHandler");
 const auth = require("./middleware/auth");
 const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+
+// Register background event listeners once when the application starts.
+require("./listeners");
 
 // Parse JSON
 app.use(express.json());

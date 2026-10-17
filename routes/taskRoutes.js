@@ -2,6 +2,7 @@ const express = require("express");
 const Task = require("../models/Task");
 const validateTask = require("../middleware/validateTask");
 const cache = require("../utils/cache");
+const taskEvents = require("../events");
 
 const router = express.Router();
 const ALL_TASKS_CACHE_KEY = "all_tasks";
@@ -32,6 +33,11 @@ router.post("/", validateTask, async (req, res, next) => {
         res.status(201).json({
             message: "Task created successfully",
             task
+        });
+        console.log(`[API] Response sent at ${new Date().toISOString()}`);
+        taskEvents.emit("task-created", {
+            task,
+            assignedUser: req.user.id
         });
     } catch (error) {
         next(error);
@@ -94,6 +100,10 @@ router.delete("/:id", async (req, res, next) => {
         cache.del(ALL_TASKS_CACHE_KEY);
         res.status(200).json({
             message: "Task deleted successfully"
+        });
+        taskEvents.emit("task-deleted", {
+            task,
+            assignedUser: req.user.id
         });
     } catch (error) {
         next(error);
