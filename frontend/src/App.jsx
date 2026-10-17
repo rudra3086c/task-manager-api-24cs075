@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { createTask, deleteTask, getCurrentUser, getTasks, login, register, updateTask } from "./api";
+import { createTask, deleteTask, generateTaskDescription, getCurrentUser, getTasks, login, register, updateTask } from "./api";
 
 const emptyForm = { title: "", description: "", priority: "medium" };
 
@@ -80,6 +80,8 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [aiMessage, setAiMessage] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
@@ -153,12 +155,12 @@ function App() {
     const taskData = {
       title: form.title.trim(),
       description: form.description.trim(),
-      priority: form.priority
-    };
+        priority: form.priority
+      };
 
-    if (!taskData.title) {
-      setError("A title is required.");
-      setSaving(false);
+      if (!taskData.title) {
+        setError("A title is required.");
+        setSaving(false);
       return;
     }
 
@@ -203,6 +205,28 @@ function App() {
     }
   };
 
+  const handleGenerateDescription = async () => {
+    const title = form.title.trim();
+    if (!title) {
+      setAiMessage("Add a task title before generating a description.");
+      return;
+    }
+
+    setGeneratingDescription(true);
+    setAiMessage("");
+    try {
+      const result = await generateTaskDescription(title);
+      if (result.description) {
+        setForm((current) => ({ ...current, description: result.description }));
+      }
+      setAiMessage(result.message);
+    } catch (requestError) {
+      setAiMessage(requestError.message);
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   const startEditing = (task) => {
     setEditingId(task._id);
     setForm({
@@ -210,6 +234,7 @@ function App() {
       description: task.description || "",
       priority: task.priority
     });
+    setAiMessage("");
     setError("");
   };
 
@@ -300,6 +325,15 @@ function App() {
               placeholder="Add useful context (optional)"
               rows="3"
             />
+            <button
+              type="button"
+              className="secondary ai-button"
+              onClick={handleGenerateDescription}
+              disabled={generatingDescription}
+            >
+              {generatingDescription ? "Generating..." : "Generate description"}
+            </button>
+            {aiMessage && <small className="ai-message">{aiMessage}</small>}
           </label>
           <label>
             Priority
@@ -318,6 +352,7 @@ function App() {
               <button type="button" className="secondary" onClick={() => {
                 setEditingId(null);
                 setForm(emptyForm);
+                setAiMessage("");
               }}>Cancel</button>
             )}
           </div>

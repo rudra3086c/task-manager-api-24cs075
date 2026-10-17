@@ -30,6 +30,8 @@ label { display: grid; gap: 7px; color: #475467; font-size: .83rem; font-weight:
 input, textarea, select { width: 100%; border: 1px solid #d0d5dd; border-radius: 9px; padding: 11px 12px; color: #1d2939; font: inherit; background: #fff; }
 textarea { resize: vertical; }
 input:focus, textarea:focus, select:focus { outline: 3px solid #e6e2ff; border-color: #6457d9; }
+.ai-button { justify-self: start; margin-top: 2px; font-size: .82rem; }
+.ai-message { color: #667085; font-weight: 400; line-height: 1.35; }
 button { border: 0; border-radius: 9px; padding: 11px 17px; color: white; background: #6457d9; font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 .secondary { color: #475467; background: #eef1f6; }

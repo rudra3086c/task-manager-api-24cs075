@@ -56,3 +56,9 @@ export const login = (credentials) =>
   });
 
 export const getCurrentUser = () => request("/auth/me");
+
+export const generateTaskDescription = (title) =>
+  request("/api/ai/generate-description", {
+    method: "POST",
+    body: JSON.stringify({ title })
+  });

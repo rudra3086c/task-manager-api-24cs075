@@ -12,6 +12,7 @@ const errorHandler = require("./middleware/errorHandler");
 const auth = require("./middleware/auth");
 const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 // Register background event listeners once when the application starts.
 require("./listeners");
@@ -32,6 +33,7 @@ app.use("/auth", authRoutes);
 
 // Task routes require a valid JWT.
 app.use("/tasks", auth, taskRoutes);
+app.use("/api/ai", auth, aiRoutes);
 
 // 404 Handler
 app.use((req, res) => {
