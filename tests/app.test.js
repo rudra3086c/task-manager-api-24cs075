@@ -5,7 +5,7 @@ describe("Application", () => {
     test("returns 404 JSON for an unknown route", async () => {
         const response = await request(app).get("/does-not-exist");
 
-        expect(response.statusCode).toBe(200);
+        expect(response.statusCode).toBe(404);
         expect(response.body).toEqual({ message: "Route not found" });
     });
 });
