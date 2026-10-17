@@ -73,3 +73,40 @@ structured JSON instead of the raw Mongoose error:
 
 Use the MongoDB Atlas database view or MongoDB Compass to confirm that
 created tasks remain available after restarting the server.
+
+## Server-side caching
+
+The authenticated `GET /tasks` endpoint uses an in-memory `node-cache`
+instance with a 60-second TTL. The first request queries MongoDB and returns
+`X-Cache: MISS`; subsequent requests within the TTL return the cached result
+with `X-Cache: HIT`. Successful POST, PUT, and DELETE operations invalidate
+the `all_tasks` cache key before returning their response.
+
+Install the cache dependency with:
+
+```bash
+npm install
+```
+
+### Measuring the impact
+
+1. Log in and copy the JWT into Postman's Bearer Token authorization.
+2. Send `GET http://localhost:5000/tasks` three times without writing any
+   tasks. Record Postman's **Time** value and the `X-Cache` response header.
+   The first request should be `MISS`; the next two should be `HIT`.
+3. Create, update, or delete a task, then send `GET /tasks` again. It should
+   be `MISS`, demonstrating invalidation.
+4. For an uncached comparison, restart the server before each request (which
+   clears the in-memory cache), or temporarily disable the cache lookup and
+   `cache.set` lines while recording three readings. Restore caching afterward.
+
+Record at least three samples in the lab journal:
+
+| Condition | Reading 1 | Reading 2 | Reading 3 | Average |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached (`X-Cache: MISS`) | ___ ms | ___ ms | ___ ms | ___ ms |
+| Cached (`X-Cache: HIT`) | ___ ms | ___ ms | ___ ms | ___ ms |
+
+This cache is process-local and is suitable for this lab, but it is not a
+shared cache for a multi-server deployment. Multiple instances can each hold
+different values; a shared store such as Redis would be needed at scale.

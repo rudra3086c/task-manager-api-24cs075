@@ -1,13 +1,23 @@
 const express = require("express");
 const Task = require("../models/Task");
 const validateTask = require("../middleware/validateTask");
+const cache = require("../utils/cache");
 
 const router = express.Router();
+const ALL_TASKS_CACHE_KEY = "all_tasks";
 
 // GET
 router.get("/", async (req, res, next) => {
     try {
+        const cachedTasks = cache.get(ALL_TASKS_CACHE_KEY);
+        if (cachedTasks !== undefined) {
+            res.set("X-Cache", "HIT");
+            return res.status(200).json(cachedTasks);
+        }
+
         const tasks = await Task.find().sort({ createdAt: -1 });
+        cache.set(ALL_TASKS_CACHE_KEY, tasks);
+        res.set("X-Cache", "MISS");
         res.status(200).json(tasks);
     } catch (error) {
         next(error);
@@ -18,6 +28,7 @@ router.get("/", async (req, res, next) => {
 router.post("/", validateTask, async (req, res, next) => {
     try {
         const task = await Task.create(req.body);
+        cache.del(ALL_TASKS_CACHE_KEY);
         res.status(201).json({
             message: "Task created successfully",
             task
@@ -59,6 +70,7 @@ router.put("/:id", validateTask, async (req, res, next) => {
             });
         }
 
+        cache.del(ALL_TASKS_CACHE_KEY);
         res.status(200).json({
             message: "Task updated successfully",
             task
@@ -79,6 +91,7 @@ router.delete("/:id", async (req, res, next) => {
             });
         }
 
+        cache.del(ALL_TASKS_CACHE_KEY);
         res.status(200).json({
             message: "Task deleted successfully"
         });
